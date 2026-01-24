@@ -1,0 +1,25 @@
+{
+  "name": "erp",
+  "version": "0.1.0",
+  "description": "An ERP system for Van Phu Binh",
+  "author": "An Tran",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/css": "^0.14.1",
+    "@eslint/js": "^9.39.2",
+    "@types/eslint-config-prettier": "^6.11.3",
+    "@types/node": "^25.0.10",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^17.1.0",
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.53.1"
+  }
+}

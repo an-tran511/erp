@@ -1,0 +1,12 @@
+layer: 'application'
+language: 'typescript'
+stack: frontend
+tags:
+  - 'solid'
+  - 'ark-ui'
+  - 'tanstack'
+  - 'vite'
+
+tasks:
+  dev:
+    command: 'pnpm run dev'
