@@ -69,13 +69,12 @@ export function defaultVariantColorsResolver({
   }
 
   if (variant === 'transparent') {
-    // Use step-11 (colorText) for text - better contrast
+    // Transparent: only colored text, no background change on hover
     return {
       background: 'transparent',
-      hover: colorLight,
+      hover: 'transparent',
       color: colorText,
       border: 'transparent',
-      hoverColor: colorLightColor,
     };
   }
 

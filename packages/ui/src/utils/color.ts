@@ -31,7 +31,9 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
  * @param color - Hex color string (e.g., "#ff0000") or CSS variable
  * @returns Luminance value between 0 and 1, or null if color cannot be parsed
  */
-function parseRgbFunction(value: string): { r: number; g: number; b: number } | null {
+function parseRgbFunction(
+  value: string
+): { r: number; g: number; b: number } | null {
   const match = value.match(/rgba?\((.+)\)/i);
   if (!match) return null;
 
@@ -39,7 +41,9 @@ function parseRgbFunction(value: string): { r: number; g: number; b: number } | 
   if (!parts || parts.length < 3) return null;
 
   const toChannel = (v: string) =>
-    v.endsWith('%') ? Math.round((parseFloat(v) / 100) * 255) : Math.round(parseFloat(v));
+    v.endsWith('%')
+      ? Math.round((parseFloat(v) / 100) * 255)
+      : Math.round(parseFloat(v));
 
   return {
     r: toChannel(parts[0]),
@@ -48,7 +52,9 @@ function parseRgbFunction(value: string): { r: number; g: number; b: number } | 
   };
 }
 
-function parseColorToRgb(color: string): { r: number; g: number; b: number } | null {
+function parseColorToRgb(
+  color: string
+): { r: number; g: number; b: number } | null {
   const normalized = color.trim().toLowerCase();
   if (normalized === 'transparent') return null;
 
@@ -149,7 +155,7 @@ export function luminance(color: string, element?: HTMLElement): number | null {
  * Note: In Radix Colors, the scale flips between light/dark modes:
  * - Light mode: step-12 is darkest (high-contrast text for light backgrounds)
  * - Dark mode: step-12 is lightest (high-contrast text for dark backgrounds)
- * 
+ *
  * Therefore, we use a constant black (#000000) for contrast text on bright colors
  * in dark mode, rather than the color's step-12 which would be light.
  *
@@ -163,7 +169,13 @@ export function isLightColor(color: string, threshold = 0.179): boolean {
     // These colors have bright/light step-9 values in BOTH light and dark modes,
     // so they always need dark text for proper contrast (WCAG compliance).
     const colorName = color.match(/--vpb-color-(\w+)-/)?.[1];
-    const colorsAlwaysNeedingDarkText = ['amber', 'yellow', 'lime', 'mint', 'sky'];
+    const colorsAlwaysNeedingDarkText = [
+      'amber',
+      'yellow',
+      'lime',
+      'mint',
+      'sky',
+    ];
     return colorName ? colorsAlwaysNeedingDarkText.includes(colorName) : false;
   }
 
@@ -190,7 +202,6 @@ export interface ContrastColorOptions {
  */
 export function resolveContrastColor({
   background,
-  colorScheme,
   luminanceThreshold = 0.3,
   darkText = '#000000',
   lightText = '#ffffff',
@@ -204,7 +215,7 @@ export function resolveContrastColor({
 
   // 2. Try to calculate actual luminance
   const lum = luminance(background, element);
-  
+
   if (lum !== null) {
     // We got a valid luminance - use threshold comparison
     return lum > luminanceThreshold ? darkText : lightText;

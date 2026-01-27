@@ -31,6 +31,15 @@ export interface ButtonProps extends Omit<ComponentProps<'button'>, 'onClick'> {
   /** If set, button takes 100% width */
   fullWidth?: boolean;
 
+  /** Styles API: classes for component parts */
+  classes?: {
+    root?: string;
+    inner?: string;
+    section?: string;
+    label?: string;
+    loader?: string;
+  };
+
   /** Button content */
   children?: JSX.Element;
 

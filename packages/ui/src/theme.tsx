@@ -1,5 +1,12 @@
 import type { ParentProps, Accessor, Setter } from 'solid-js';
-import { createContext, createMemo, createSignal, useContext, createEffect, onCleanup } from 'solid-js';
+import {
+  createContext,
+  createMemo,
+  createSignal,
+  useContext,
+  createEffect,
+  onCleanup,
+} from 'solid-js';
 import type { VpbColor } from './types';
 
 export type ColorScheme = 'light' | 'dark';
@@ -35,7 +42,8 @@ export const ThemeProvider = (props: ParentProps<ThemeProviderProps>) => {
 
   // Create reactive theme that updates when props.theme changes
   const theme = createMemo(() => {
-    const themeProps = typeof props.theme === 'function' ? props.theme() : props.theme;
+    const themeProps =
+      typeof props.theme === 'function' ? props.theme() : props.theme;
     return {
       ...defaultTheme,
       ...themeProps,
@@ -46,7 +54,7 @@ export const ThemeProvider = (props: ParentProps<ThemeProviderProps>) => {
   createEffect(() => {
     const scheme = colorScheme();
     const html = document.documentElement;
-    
+
     if (scheme === 'dark') {
       html.classList.add('dark', 'dark-theme');
       html.setAttribute('data-vpb-color-scheme', 'dark');

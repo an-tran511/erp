@@ -1,4 +1,11 @@
-import { createEffect, createMemo, createSignal, mergeProps, Show, splitProps } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  mergeProps,
+  Show,
+  splitProps,
+} from 'solid-js';
 import type { Component, JSX } from 'solid-js';
 import classes from './Button.module.css';
 import type {
@@ -53,8 +60,11 @@ const Loader: Component<{ size?: string; class?: string }> = (props) => {
 };
 
 export const Button: Component<ButtonProps> = (props) => {
-  const { theme, colorScheme } = useTheme();
+  const { theme } = useTheme();
   const [autoTextColor, setAutoTextColor] = createSignal<string | null>(null);
+  const [autoHoverTextColor, setAutoHoverTextColor] = createSignal<
+    string | null
+  >(null);
   const [buttonEl, setButtonEl] = createSignal<HTMLButtonElement | undefined>();
   const [isPressed, setIsPressed] = createSignal(false);
 
@@ -80,6 +90,7 @@ export const Button: Component<ButtonProps> = (props) => {
       'disabled',
       'loading',
       'fullWidth',
+      'classes',
       'leftSection',
       'rightSection',
       'children',
@@ -108,33 +119,60 @@ export const Button: Component<ButtonProps> = (props) => {
     getRadiusVar(local.radius === 'default' ? theme.radius : local.radius)
   );
 
+  // Guideline 1: Derive a memo for the filled background only
+  // Contrast is only needed for 'filled' variant with a valid background
+  const filledBackground = createMemo(() => {
+    if (variantValue() !== 'filled') return null;
+    const bg = variantColors().background;
+    if (!bg || bg === 'transparent') return null;
+    return bg;
+  });
+
+  // Guideline 1 & 2: Recalculate contrast only when filledBackground changes
+  // Also compute hover contrast separately from hover background
   createEffect(() => {
     const el = buttonEl();
-    if (!el) return;
-    if (variantValue() !== 'filled') {
+    const bg = filledBackground();
+
+    // Reset when not filled or invalid background
+    if (!el || !bg) {
       setAutoTextColor(null);
+      setAutoHoverTextColor(null);
       return;
     }
 
-    const background = variantColors().background;
-    if (!background || background === 'transparent') {
-      setAutoTextColor(null);
-      return;
-    }
-
-    const resolved = resolveContrastColor({
-      background,
-      colorScheme: colorScheme(),
+    // Resolve normal text contrast from background
+    const resolvedText = resolveContrastColor({
+      background: bg,
       luminanceThreshold: 0.3,
       element: el,
     });
-    setAutoTextColor(resolved);
+    setAutoTextColor(resolvedText);
+
+    // Guideline 2: Resolve hover text contrast from hover background when present
+    const hoverBg = variantColors().hover;
+    if (hoverBg && hoverBg !== 'transparent' && hoverBg !== bg) {
+      const resolvedHover = resolveContrastColor({
+        background: hoverBg,
+        luminanceThreshold: 0.3,
+        element: el,
+      });
+      setAutoHoverTextColor(resolvedHover);
+    } else {
+      // Fall back to normal text color if no distinct hover background
+      setAutoHoverTextColor(null);
+    }
   });
 
   const buttonVars = createMemo(() => {
     const colors = variantColors();
     const textColor = autoTextColor() ?? colors.color;
-    const hoverColor = autoTextColor() ?? colors.hoverColor ?? colors.color;
+    // Guideline 2: Use resolved hover contrast, fall back to normal text color only if no hover bg
+    const hoverColor =
+      autoHoverTextColor() ??
+      autoTextColor() ??
+      colors.hoverColor ??
+      colors.color;
     const vars: Record<string, string> = {
       '--button-bg': colors.background,
       '--button-hover': colors.hover,
@@ -182,7 +220,9 @@ export const Button: Component<ButtonProps> = (props) => {
     }
   };
 
-  const handlePointerDown: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (e) => {
+  const handlePointerDown: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (
+    e
+  ) => {
     if (local.disabled || local.loading) return;
     setIsPressed(true);
     if (typeof local.onPointerDown === 'function') {
@@ -190,21 +230,29 @@ export const Button: Component<ButtonProps> = (props) => {
     }
   };
 
-  const handlePointerUp: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (e) => {
+  const handlePointerUp: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (
+    e
+  ) => {
     setIsPressed(false);
     if (typeof local.onPointerUp === 'function') {
       local.onPointerUp(e);
     }
   };
 
-  const handlePointerCancel: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (e) => {
+  const handlePointerCancel: JSX.EventHandler<
+    HTMLButtonElement,
+    PointerEvent
+  > = (e) => {
     setIsPressed(false);
     if (typeof local.onPointerCancel === 'function') {
       local.onPointerCancel(e);
     }
   };
 
-  const handlePointerLeave: JSX.EventHandler<HTMLButtonElement, PointerEvent> = () => {
+  const handlePointerLeave: JSX.EventHandler<
+    HTMLButtonElement,
+    PointerEvent
+  > = () => {
     setIsPressed(false);
   };
 
@@ -212,13 +260,15 @@ export const Button: Component<ButtonProps> = (props) => {
     <button
       ref={setButtonEl}
       {...others}
-      class={`${classes.root} ${local.class || ''}`}
+      class={`${classes.root} ${local.classes?.root || ''} ${local.class || ''}`}
       data-block={local.fullWidth || undefined}
       data-with-left-section={hasLeftSection || undefined}
       data-with-right-section={hasRightSection || undefined}
       data-loading={local.loading || undefined}
       data-disabled={local.disabled || undefined}
       data-pressed={isPressed() || undefined}
+      // Guideline 4: Mirror data-pressed with aria-pressed for accessibility
+      aria-pressed={isPressed() || undefined}
       disabled={local.disabled || local.loading}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
@@ -230,25 +280,37 @@ export const Button: Component<ButtonProps> = (props) => {
         ...(others.style as JSX.CSSProperties),
       }}
     >
+      {/* Guideline 3: Loader explicitly binds to --button-color for resolved contrast */}
       <Show when={local.loading}>
-        <div class={classes.loader}>
+        <div
+          class={`${classes.loader} ${local.classes?.loader || ''}`}
+          style={{ color: 'var(--button-color)' }}
+        >
           <Loader size='1rem' />
         </div>
       </Show>
 
-      <div class={classes.inner}>
+      <div class={`${classes.inner} ${local.classes?.inner || ''}`}>
         <Show when={local.leftSection}>
-          <div class={classes.section} data-position='left'>
+          <div
+            class={`${classes.section} ${local.classes?.section || ''}`}
+            data-position='left'
+          >
             {local.leftSection}
           </div>
         </Show>
 
         <Show when={local.children}>
-          <div class={classes.label}>{local.children}</div>
+          <div class={`${classes.label} ${local.classes?.label || ''}`}>
+            {local.children}
+          </div>
         </Show>
 
         <Show when={local.rightSection}>
-          <div class={classes.section} data-position='right'>
+          <div
+            class={`${classes.section} ${local.classes?.section || ''}`}
+            data-position='right'
+          >
             {local.rightSection}
           </div>
         </Show>

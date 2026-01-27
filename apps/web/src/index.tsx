@@ -2,6 +2,7 @@
 import { render } from 'solid-js/web';
 import 'solid-devtools';
 import '@erp/ui/theme.css';
+import { ThemeProvider } from '@erp/ui';
 
 import App from './App';
 
@@ -13,4 +14,11 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   );
 }
 
-render(() => <App />, root!);
+render(
+  () => (
+    <ThemeProvider defaultColorScheme="light">
+      <App />
+    </ThemeProvider>
+  ),
+  root!
+);
