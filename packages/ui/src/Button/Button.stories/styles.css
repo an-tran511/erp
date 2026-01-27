@@ -1,0 +1,35 @@
+/* Story-specific CSS classes for Button.classes.stories.tsx */
+
+.button-compact {
+  --button-padding-x: 0 !important;
+  --button-height: auto !important;
+  min-height: 0 !important;
+}
+
+.button-rounded-full {
+  --button-radius: 9999px !important;
+  --button-padding-x: 2rem !important;
+}
+
+.button-sharp {
+  --button-radius: 0 !important;
+  --button-padding-x: 3rem !important;
+}
+
+.button-inner-spacing {
+  gap: 0.5rem;
+}
+
+.button-label-uppercase {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.button-section-large {
+  font-size: 1.2em;
+}
+
+.button-label-bold {
+  font-weight: 700;
+}

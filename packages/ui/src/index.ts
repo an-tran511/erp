@@ -8,5 +8,5 @@ export type {
 } from './Button';
 export type { VpbColor } from './types';
 export { ThemeProvider, useTheme, defaultTheme } from './theme';
-export type { Theme, ColorScheme, ThemeProviderProps } from './theme';
+export type { Theme, ThemeProviderProps } from './theme';
 export { resolveContrastColor } from './utils/color';

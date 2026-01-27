@@ -4,3 +4,5 @@
 .moon/docker
 
 node_modules
+*storybook.log
+storybook-static

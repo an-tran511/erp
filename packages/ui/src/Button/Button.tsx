@@ -6,7 +6,7 @@ import {
   Show,
   splitProps,
 } from 'solid-js';
-import type { Component, JSX } from 'solid-js';
+import type { Accessor, Component, JSX } from 'solid-js';
 import classes from './Button.module.css';
 import type {
   ButtonProps,
@@ -18,11 +18,117 @@ import { defaultVariantColorsResolver } from './Button.vars';
 import { getSizeVars, getRadiusVar } from './Button.utils';
 import { resolveContrastColor } from '../utils/color';
 import { useTheme } from '../theme';
+import { VpbColor } from '../types';
 
-/**
- * Simple loading spinner component
- * TODO: Replace with a proper Loader component when available
- */
+type VariantColors = ReturnType<typeof defaultVariantColorsResolver>;
+
+type ButtonContrastResult = {
+  textColor: Accessor<string | null>;
+  hoverTextColor: Accessor<string | null>;
+};
+
+const useButtonContrast = (params: {
+  buttonEl: Accessor<HTMLButtonElement | undefined>;
+  variant: Accessor<ButtonVariant>;
+  variantColors: Accessor<VariantColors>;
+}): ButtonContrastResult => {
+  const [autoTextColor, setAutoTextColor] = createSignal<string | null>(null);
+  const [autoHoverTextColor, setAutoHoverTextColor] = createSignal<
+    string | null
+  >(null);
+
+  const filledBackground = createMemo(() => {
+    if (params.variant() !== 'filled') return null;
+    const bg = params.variantColors().background;
+    if (!bg || bg === 'transparent') return null;
+    return bg;
+  });
+
+  createEffect(() => {
+    const el = params.buttonEl();
+    const bg = filledBackground();
+
+    if (!el || !bg) {
+      setAutoTextColor(null);
+      setAutoHoverTextColor(null);
+      return;
+    }
+
+    const resolvedText = resolveContrastColor({
+      background: bg,
+      luminanceThreshold: 0.3,
+      element: el,
+    });
+    setAutoTextColor(resolvedText);
+
+    const hoverBg = params.variantColors().hover;
+    if (hoverBg && hoverBg !== 'transparent' && hoverBg !== bg) {
+      const resolvedHover = resolveContrastColor({
+        background: hoverBg,
+        luminanceThreshold: 0.3,
+        element: el,
+      });
+      setAutoHoverTextColor(resolvedHover);
+    } else {
+      setAutoHoverTextColor(null);
+    }
+  });
+
+  return {
+    textColor: autoTextColor,
+    hoverTextColor: autoHoverTextColor,
+  };
+};
+
+type PressStateResult = {
+  isPressed: Accessor<boolean>;
+  handleClickFallback: () => void;
+  handlePointerDown: (event: PointerEvent) => void;
+  handlePointerUp: (event: PointerEvent) => void;
+  handlePointerCancel: (event: PointerEvent) => void;
+  handlePointerLeave: () => void;
+};
+
+const usePressState = (isInteractive: () => boolean): PressStateResult => {
+  const [pressed, setPressed] = createSignal(false);
+
+  const reset = () => setPressed(false);
+
+  const handleClickFallback = () => {
+    if (!isInteractive() || pressed()) return;
+    setPressed(true);
+    requestAnimationFrame(() => {
+      setTimeout(reset, 100);
+    });
+  };
+
+  const handlePointerDown = () => {
+    if (!isInteractive()) return;
+    setPressed(true);
+  };
+
+  const handlePointerUp = () => {
+    reset();
+  };
+
+  const handlePointerCancel = () => {
+    reset();
+  };
+
+  const handlePointerLeave = () => {
+    reset();
+  };
+
+  return {
+    isPressed: pressed,
+    handleClickFallback,
+    handlePointerDown,
+    handlePointerUp,
+    handlePointerCancel,
+    handlePointerLeave,
+  };
+};
+
 const Loader: Component<{ size?: string; class?: string }> = (props) => {
   const size = props.size || '1rem';
   return (
@@ -35,38 +141,22 @@ const Loader: Component<{ size?: string; class?: string }> = (props) => {
       }}
     >
       <svg
+        class={classes.loaderIcon}
         viewBox='0 0 24 24'
         fill='none'
         stroke='currentColor'
         stroke-width='2'
         stroke-linecap='round'
-        style={{
-          width: '100%',
-          height: '100%',
-          animation: 'spin 1s linear infinite',
-        }}
       >
         <path d='M21 12a9 9 0 1 1-6.219-8.56' />
       </svg>
-      <style>
-        {`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </div>
   );
 };
 
 export const Button: Component<ButtonProps> = (props) => {
   const { theme } = useTheme();
-  const [autoTextColor, setAutoTextColor] = createSignal<string | null>(null);
-  const [autoHoverTextColor, setAutoHoverTextColor] = createSignal<
-    string | null
-  >(null);
   const [buttonEl, setButtonEl] = createSignal<HTMLButtonElement | undefined>();
-  const [isPressed, setIsPressed] = createSignal(false);
 
   const [local, others] = splitProps(
     mergeProps(
@@ -102,11 +192,9 @@ export const Button: Component<ButtonProps> = (props) => {
     ]
   );
 
-  const variantValue = createMemo(() => local.variant);
-  // Use theme's primaryColor as default if no color prop is provided
-  const colorValue = createMemo(() => local.color ?? theme.primaryColor);
+  const variantValue: Accessor<ButtonVariant> = () => local.variant;
+  const colorValue: Accessor<VpbColor> = () => local.color ?? theme.primaryColor;
 
-  // Resolve variant colors using Mantine's pattern
   const variantColors = createMemo(() =>
     defaultVariantColorsResolver({
       variant: variantValue(),
@@ -119,112 +207,64 @@ export const Button: Component<ButtonProps> = (props) => {
     getRadiusVar(local.radius === 'default' ? theme.radius : local.radius)
   );
 
-  // Guideline 1: Derive a memo for the filled background only
-  // Contrast is only needed for 'filled' variant with a valid background
-  const filledBackground = createMemo(() => {
-    if (variantValue() !== 'filled') return null;
-    const bg = variantColors().background;
-    if (!bg || bg === 'transparent') return null;
-    return bg;
+  const isDisabled = () => local.disabled || local.loading;
+
+  const contrast = useButtonContrast({
+    buttonEl,
+    variant: variantValue,
+    variantColors,
   });
 
-  // Guideline 1 & 2: Recalculate contrast only when filledBackground changes
-  // Also compute hover contrast separately from hover background
-  createEffect(() => {
-    const el = buttonEl();
-    const bg = filledBackground();
+  const pressState = usePressState(() => !isDisabled());
 
-    // Reset when not filled or invalid background
-    if (!el || !bg) {
-      setAutoTextColor(null);
-      setAutoHoverTextColor(null);
-      return;
-    }
-
-    // Resolve normal text contrast from background
-    const resolvedText = resolveContrastColor({
-      background: bg,
-      luminanceThreshold: 0.3,
-      element: el,
-    });
-    setAutoTextColor(resolvedText);
-
-    // Guideline 2: Resolve hover text contrast from hover background when present
-    const hoverBg = variantColors().hover;
-    if (hoverBg && hoverBg !== 'transparent' && hoverBg !== bg) {
-      const resolvedHover = resolveContrastColor({
-        background: hoverBg,
-        luminanceThreshold: 0.3,
-        element: el,
-      });
-      setAutoHoverTextColor(resolvedHover);
-    } else {
-      // Fall back to normal text color if no distinct hover background
-      setAutoHoverTextColor(null);
-    }
-  });
-
-  const buttonVars = createMemo(() => {
+  const colorVars = createMemo(() => {
     const colors = variantColors();
-    const textColor = autoTextColor() ?? colors.color;
-    // Guideline 2: Use resolved hover contrast, fall back to normal text color only if no hover bg
+    const textColor = contrast.textColor() ?? colors.color;
     const hoverColor =
-      autoHoverTextColor() ??
-      autoTextColor() ??
+      contrast.hoverTextColor() ??
+      contrast.textColor() ??
       colors.hoverColor ??
       colors.color;
-    const vars: Record<string, string> = {
+
+    return {
       '--button-bg': colors.background,
       '--button-hover': colors.hover,
       '--button-color': textColor,
       '--button-bd': colors.border,
-      ...(hoverColor && {
-        '--button-hover-color': hoverColor,
-      }),
-      ...(colors.borderHover && {
-        '--button-bd-hover': colors.borderHover,
-      }),
-    };
+      ...(hoverColor && { '--button-hover-color': hoverColor }),
+      ...(colors.borderHover && { '--button-bd-hover': colors.borderHover }),
+    } as Record<string, string>;
+  });
 
+  const layoutVars = createMemo(() => {
     const size = sizeVars();
-    vars['--button-height'] = size.height;
-    vars['--button-padding-x'] = size.paddingX;
-    vars['--button-fz'] = size.fontSize;
-
     const radius = radiusVar();
-    if (radius) {
-      vars['--button-radius'] = radius;
-    }
 
-    return vars;
+    return {
+      '--button-height': size.height,
+      '--button-padding-x': size.paddingX,
+      '--button-fz': size.fontSize,
+      ...(radius ? { '--button-radius': radius } : {}),
+    } as Record<string, string>;
   });
 
   const hasLeftSection = Boolean(local.leftSection);
   const hasRightSection = Boolean(local.rightSection);
 
   const handleClick: JSX.EventHandler<HTMLButtonElement, MouseEvent> = (e) => {
-    if (local.disabled || local.loading) {
+    if (isDisabled()) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    // Trigger press animation on click (fallback for soft taps that don't trigger pointerdown)
-    if (!isPressed()) {
-      setIsPressed(true);
-      requestAnimationFrame(() => {
-        setTimeout(() => setIsPressed(false), 100);
-      });
-    }
-    if (typeof local.onClick === 'function') {
-      local.onClick(e);
-    }
+    pressState.handleClickFallback();
+    local.onClick?.(e);
   };
 
   const handlePointerDown: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (
     e
   ) => {
-    if (local.disabled || local.loading) return;
-    setIsPressed(true);
+    pressState.handlePointerDown(e);
     if (typeof local.onPointerDown === 'function') {
       local.onPointerDown(e);
     }
@@ -233,7 +273,7 @@ export const Button: Component<ButtonProps> = (props) => {
   const handlePointerUp: JSX.EventHandler<HTMLButtonElement, PointerEvent> = (
     e
   ) => {
-    setIsPressed(false);
+    pressState.handlePointerUp(e);
     if (typeof local.onPointerUp === 'function') {
       local.onPointerUp(e);
     }
@@ -243,7 +283,7 @@ export const Button: Component<ButtonProps> = (props) => {
     HTMLButtonElement,
     PointerEvent
   > = (e) => {
-    setIsPressed(false);
+    pressState.handlePointerCancel(e);
     if (typeof local.onPointerCancel === 'function') {
       local.onPointerCancel(e);
     }
@@ -253,7 +293,7 @@ export const Button: Component<ButtonProps> = (props) => {
     HTMLButtonElement,
     PointerEvent
   > = () => {
-    setIsPressed(false);
+    pressState.handlePointerLeave();
   };
 
   return (
@@ -266,17 +306,17 @@ export const Button: Component<ButtonProps> = (props) => {
       data-with-right-section={hasRightSection || undefined}
       data-loading={local.loading || undefined}
       data-disabled={local.disabled || undefined}
-      data-pressed={isPressed() || undefined}
-      // Guideline 4: Mirror data-pressed with aria-pressed for accessibility
-      aria-pressed={isPressed() || undefined}
-      disabled={local.disabled || local.loading}
+      data-pressed={pressState.isPressed() || undefined}
+      aria-pressed={pressState.isPressed() || undefined}
+      disabled={isDisabled()}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onPointerLeave={handlePointerLeave}
       style={{
-        ...buttonVars(),
+        ...colorVars(),
+        ...layoutVars(),
         ...(others.style as JSX.CSSProperties),
       }}
     >

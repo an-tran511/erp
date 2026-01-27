@@ -11,6 +11,25 @@
   "dependencies": {
     "@erp/shared": "workspace:*",
     "@radix-ui/colors": "^3.0.0",
-    "solid-js": "catalog:"
+    "solid-js": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-solid": "catalog:"
+  },
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.0",
+    "@storybook/addon-a11y": "^10.2.0",
+    "@storybook/addon-docs": "^10.2.0",
+    "@storybook/addon-vitest": "^10.2.0",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "eslint-plugin-storybook": "^10.2.0",
+    "playwright": "^1.58.0",
+    "storybook": "^10.2.0",
+    "storybook-solidjs-vite": "^10.0.9",
+    "vitest": "^4.0.18"
   }
 }

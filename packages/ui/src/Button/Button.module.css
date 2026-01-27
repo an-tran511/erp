@@ -41,7 +41,7 @@
     --button-hover: var(--vpb-primary-color-filled-hover);
     --button-bd: transparent;
     --button-hover-color: var(--button-color);
-    --button-fz: var(--vpb-font-size-sm);
+    --button-fz: var(--vpb-font-size-md);
     --button-radius: var(--vpb-radius-default);
 
     /* Modern CSS: Logical properties (2022+ spec) */
@@ -220,6 +220,18 @@
       transform 150ms ease;
     pointer-events: none;
     color: currentColor;
+  }
+
+  .loaderIcon {
+    width: 100%;
+    height: 100%;
+    animation: button-spin 1s linear infinite;
+  }
+
+  @keyframes button-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 }
 

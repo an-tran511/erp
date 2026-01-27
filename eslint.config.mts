@@ -1,3 +1,6 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import storybook from "eslint-plugin-storybook";
+
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
@@ -11,34 +14,28 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * Root ESLint configuration for the entire monorepo.
  * Apps can extend this config.
  */
-export default defineConfig([
-  // Global ignores - applies to all files
-  globalIgnores([
-    '**/node_modules/**',
-    '**/dist/**',
-    '**/build/**',
-    '**/.vite/**',
-    '**/.next/**',
-    '**/coverage/**',
-    '**/*.min.js',
-    '**/pnpm-lock.yaml',
-    '**/package-lock.json',
-    '**/yarn.lock',
-  ]),
-  // Base JavaScript recommended rules
-  js.configs.recommended,
-  // Config files - exclude from type checking
-  {
-    files: ['**/eslint.config.*'],
-    languageOptions: {
-      parserOptions: {
-        tsconfigRootDir: __dirname,
-        project: null,
-      },
+export default defineConfig([// Global ignores - applies to all files
+globalIgnores([
+  '**/node_modules/**',
+  '**/dist/**',
+  '**/build/**',
+  '**/.vite/**',
+  '**/.next/**',
+  '**/coverage/**',
+  '**/*.min.js',
+  '**/pnpm-lock.yaml',
+  '**/package-lock.json',
+  '**/yarn.lock',
+]), // Base JavaScript recommended rules
+js.configs.recommended, // Config files - exclude from type checking
+{
+  files: ['**/eslint.config.*'],
+  languageOptions: {
+    parserOptions: {
+      tsconfigRootDir: __dirname,
+      project: null,
     },
   },
-  // TypeScript ESLint recommended rules
-  ...tseslint.configs.recommended,
-  // Prettier config - disables ESLint rules that conflict with Prettier
-  prettier,
-]);
+}, // TypeScript ESLint recommended rules
+...tseslint.configs.recommended, // Prettier config - disables ESLint rules that conflict with Prettier
+prettier, ...storybook.configs["flat/recommended"]]);

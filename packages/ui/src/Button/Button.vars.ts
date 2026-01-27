@@ -59,7 +59,7 @@ export function defaultVariantColorsResolver({
     // Use step-11 (colorText) for text - much better contrast than step-9 (colorFilled)
     // This follows Radix design where step-11 is for high-contrast text
     return {
-      background: 'transparent',
+      background: 'var(--color-surface)',
       hover: colorLight,
       color: colorText,
       border: colorOutline,

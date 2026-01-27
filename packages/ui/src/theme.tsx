@@ -1,15 +1,6 @@
-import type { ParentProps, Accessor, Setter } from 'solid-js';
-import {
-  createContext,
-  createMemo,
-  createSignal,
-  useContext,
-  createEffect,
-  onCleanup,
-} from 'solid-js';
+import type { JSX, Component } from 'solid-js';
+import { createContext, createMemo, useContext } from 'solid-js';
 import type { VpbColor } from './types';
-
-export type ColorScheme = 'light' | 'dark';
 
 export interface Theme {
   primaryColor: VpbColor;
@@ -23,23 +14,17 @@ export const defaultTheme: Theme = {
 
 interface ThemeContextValue {
   theme: Theme;
-  colorScheme: Accessor<ColorScheme>;
-  setColorScheme: Setter<ColorScheme>;
-  toggleColorScheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>();
 
 export interface ThemeProviderProps {
   theme?: Partial<Theme> | (() => Partial<Theme>);
-  defaultColorScheme?: ColorScheme;
 }
 
-export const ThemeProvider = (props: ParentProps<ThemeProviderProps>) => {
-  const [colorScheme, setColorScheme] = createSignal<ColorScheme>(
-    props.defaultColorScheme ?? 'light'
-  );
-
+export const ThemeProvider: Component<
+  ThemeProviderProps & { children: JSX.Element }
+> = (props) => {
   // Create reactive theme that updates when props.theme changes
   const theme = createMemo(() => {
     const themeProps =
@@ -50,44 +35,17 @@ export const ThemeProvider = (props: ParentProps<ThemeProviderProps>) => {
     };
   });
 
-  // Apply color scheme to html element for proper CSS variable resolution
-  createEffect(() => {
-    const scheme = colorScheme();
-    const html = document.documentElement;
-
-    if (scheme === 'dark') {
-      html.classList.add('dark', 'dark-theme');
-      html.setAttribute('data-vpb-color-scheme', 'dark');
-    } else {
-      html.classList.remove('dark', 'dark-theme');
-      html.setAttribute('data-vpb-color-scheme', 'light');
-    }
-
-    // Cleanup on unmount
-    onCleanup(() => {
-      html.classList.remove('dark', 'dark-theme');
-      html.removeAttribute('data-vpb-color-scheme');
-    });
-  });
-
-  const toggleColorScheme = () => {
-    setColorScheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
-
   const contextValue: ThemeContextValue = {
     get theme() {
       return theme();
     },
-    colorScheme,
-    setColorScheme,
-    toggleColorScheme,
   };
 
   return (
     <ThemeContext.Provider value={contextValue}>
       <div
-        data-vpb-color-scheme={colorScheme()}
-        class={`vpb-theme-provider ${colorScheme()}`}
+        data-vpb-color-scheme="light"
+        class="vpb-theme-provider"
       >
         {props.children}
       </div>
