@@ -19,6 +19,10 @@ import { getSizeVars, getRadiusVar } from './Button.utils';
 import { resolveContrastColor } from '../utils/color';
 import { useTheme } from '../theme';
 import { VpbColor } from '../types';
+import { composeVars } from '../utils/compose-vars';
+import { usePressState } from '../utils/use-press-state';
+import { Loader } from '../Loader/Loader';
+import type { CssVars } from '../types/css-vars';
 
 type VariantColors = ReturnType<typeof defaultVariantColorsResolver>;
 
@@ -80,79 +84,45 @@ const useButtonContrast = (params: {
   };
 };
 
-type PressStateResult = {
-  isPressed: Accessor<boolean>;
-  handleClickFallback: () => void;
-  handlePointerDown: (event: PointerEvent) => void;
-  handlePointerUp: (event: PointerEvent) => void;
-  handlePointerCancel: (event: PointerEvent) => void;
-  handlePointerLeave: () => void;
-};
+const useButtonColorVars = (params: {
+  variantColors: Accessor<VariantColors>;
+  textColor: Accessor<string | null>;
+  hoverTextColor: Accessor<string | null>;
+}): Accessor<CssVars> =>
+  createMemo(() => {
+    const colors = params.variantColors();
+    const textColor = params.textColor() ?? colors.color;
+    const hoverColor =
+      params.hoverTextColor() ??
+      params.textColor() ??
+      colors.hoverColor ??
+      colors.color;
 
-const usePressState = (isInteractive: () => boolean): PressStateResult => {
-  const [pressed, setPressed] = createSignal(false);
+    return {
+      '--button-bg': colors.background,
+      '--button-hover': colors.hover,
+      '--button-color': textColor,
+      '--button-bd': colors.border,
+      ...(hoverColor && { '--button-hover-color': hoverColor }),
+      ...(colors.borderHover && { '--button-bd-hover': colors.borderHover }),
+    };
+  });
 
-  const reset = () => setPressed(false);
+const useButtonLayoutVars = (params: {
+  sizeVars: Accessor<ReturnType<typeof getSizeVars>>;
+  radiusVar: Accessor<string | undefined | null>;
+}): Accessor<CssVars> =>
+  createMemo(() => {
+    const size = params.sizeVars();
+    const radius = params.radiusVar();
 
-  const handleClickFallback = () => {
-    if (!isInteractive() || pressed()) return;
-    setPressed(true);
-    requestAnimationFrame(() => {
-      setTimeout(reset, 100);
-    });
-  };
-
-  const handlePointerDown = () => {
-    if (!isInteractive()) return;
-    setPressed(true);
-  };
-
-  const handlePointerUp = () => {
-    reset();
-  };
-
-  const handlePointerCancel = () => {
-    reset();
-  };
-
-  const handlePointerLeave = () => {
-    reset();
-  };
-
-  return {
-    isPressed: pressed,
-    handleClickFallback,
-    handlePointerDown,
-    handlePointerUp,
-    handlePointerCancel,
-    handlePointerLeave,
-  };
-};
-
-const Loader: Component<{ size?: string; class?: string }> = (props) => {
-  const size = props.size || '1rem';
-  return (
-    <div
-      class={props.class}
-      style={{
-        width: size,
-        height: size,
-        display: 'inline-block',
-      }}
-    >
-      <svg
-        class={classes.loaderIcon}
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        stroke-width='2'
-        stroke-linecap='round'
-      >
-        <path d='M21 12a9 9 0 1 1-6.219-8.56' />
-      </svg>
-    </div>
-  );
-};
+    return {
+      '--button-height': size.height,
+      '--button-padding-x': size.paddingX,
+      '--button-fz': size.fontSize,
+      ...(radius ? { '--button-radius': radius } : {}),
+    };
+  });
 
 export const Button: Component<ButtonProps> = (props) => {
   const { theme } = useTheme();
@@ -163,7 +133,7 @@ export const Button: Component<ButtonProps> = (props) => {
       {
         variant: 'filled' as ButtonVariant,
         size: 'md' as ButtonSize,
-        radius: 'default' as ButtonRadius | 'default',
+        radius: 'default' as ButtonRadius,
         justify: 'center' as JSX.CSSProperties['justify-content'],
         disabled: false,
         loading: false,
@@ -217,36 +187,18 @@ export const Button: Component<ButtonProps> = (props) => {
 
   const pressState = usePressState(() => !isDisabled());
 
-  const colorVars = createMemo(() => {
-    const colors = variantColors();
-    const textColor = contrast.textColor() ?? colors.color;
-    const hoverColor =
-      contrast.hoverTextColor() ??
-      contrast.textColor() ??
-      colors.hoverColor ??
-      colors.color;
-
-    return {
-      '--button-bg': colors.background,
-      '--button-hover': colors.hover,
-      '--button-color': textColor,
-      '--button-bd': colors.border,
-      ...(hoverColor && { '--button-hover-color': hoverColor }),
-      ...(colors.borderHover && { '--button-bd-hover': colors.borderHover }),
-    } as Record<string, string>;
+  const colorVars = useButtonColorVars({
+    variantColors,
+    textColor: contrast.textColor,
+    hoverTextColor: contrast.hoverTextColor,
   });
 
-  const layoutVars = createMemo(() => {
-    const size = sizeVars();
-    const radius = radiusVar();
-
-    return {
-      '--button-height': size.height,
-      '--button-padding-x': size.paddingX,
-      '--button-fz': size.fontSize,
-      ...(radius ? { '--button-radius': radius } : {}),
-    } as Record<string, string>;
+  const layoutVars = useButtonLayoutVars({
+    sizeVars,
+    radiusVar,
   });
+
+  const vars = composeVars(colorVars, layoutVars);
 
   const hasLeftSection = Boolean(local.leftSection);
   const hasRightSection = Boolean(local.rightSection);
@@ -315,8 +267,7 @@ export const Button: Component<ButtonProps> = (props) => {
       onPointerCancel={handlePointerCancel}
       onPointerLeave={handlePointerLeave}
       style={{
-        ...colorVars(),
-        ...layoutVars(),
+        ...vars(),
         ...(others.style as JSX.CSSProperties),
       }}
     >
