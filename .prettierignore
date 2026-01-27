@@ -10,18 +10,9 @@ coverage
 .vite
 .next
 
-# Lock files
-pnpm-lock.yaml
-package-lock.json
-yarn.lock
-
 # Generated files
 *.min.js
 *.min.css
-
-# Config files that shouldn't be formatted
-tsconfig.json
-tsconfig.*.json
 
 # Misc
 .DS_Store

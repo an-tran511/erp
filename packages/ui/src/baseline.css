@@ -1,0 +1,49 @@
+/* Modern CSS: @layer for cascade control */
+@layer reset, base;
+
+/* Modern CSS: Reset layer with universal selector */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+/* Modern CSS: Base layer with modern selectors */
+@layer base {
+  :root,
+  :host {
+    color-scheme: var(--vpb-color-scheme);
+  }
+
+  /* Modern CSS: :is() for grouping form elements */
+  :is(input, button, textarea, select) {
+    font: inherit;
+  }
+
+  /* Modern CSS: Logical grouping with :is() */
+  :is(button, select) {
+    text-transform: none;
+  }
+
+  /* Modern CSS: Native nesting for body and :host */
+  body,
+  :host {
+    margin: 0;
+    font-family: var(--vpb-font-family);
+    font-size: var(--vpb-font-size-md);
+    line-height: var(--vpb-line-height);
+    background-color: var(--vpb-color-body);
+    color: var(--vpb-color-text);
+
+    /* Modern CSS: Logical properties for font smoothing */
+    -webkit-font-smoothing: var(--vpb-webkit-font-smoothing);
+    -moz-osx-font-smoothing: var(--vpb-moz-font-smoothing);
+
+    /* Modern CSS: Modern media query syntax */
+    @media (max-width: 31.25em) {
+      -webkit-text-size-adjust: 100%;
+    }
+  }
+}

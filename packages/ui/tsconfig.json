@@ -1,0 +1,5 @@
+{
+  "extends": "@erp/shared/tsconfig/solid",
+  "include": ["src", "declarations.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@erp/ui",
+  "version": "0.1.0",
+  "description": "UI components for ERP",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "exports": {
+    "./theme.css": "./src/theme.css",
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@erp/shared": "workspace:*",
+    "@radix-ui/colors": "^3.0.0",
+    "solid-js": "catalog:"
+  }
+}

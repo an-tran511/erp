@@ -1,0 +1,10 @@
+{
+  "name": "@erp/shared",
+  "version": "0.1.0",
+  "description": "Shared packages for ERP",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "exports": {
+    "./tsconfig/solid": "./tsconfig.solid.json"
+  }
+}

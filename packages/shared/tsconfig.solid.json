@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ESNext",
+
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    "isolatedModules": true,
+    "noEmit": true,
+
+    "strict": true
+  }
+}
