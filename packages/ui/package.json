@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@corvu/drawer": "^0.2.4",
     "@erp/shared": "workspace:*",
     "@radix-ui/colors": "^3.0.0",
     "solid-js": "catalog:",
